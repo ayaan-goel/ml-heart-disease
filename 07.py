@@ -11,7 +11,7 @@ from matplotlib.patches import Patch
 
 from imblearn.over_sampling import SMOTE
 from imblearn.pipeline import Pipeline as ImbPipeline
-from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.base import BaseEstimator, TransformerMixin, clone
 from sklearn.decomposition import PCA
 from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import RandomForestClassifier, VotingClassifier
@@ -19,7 +19,8 @@ from sklearn.feature_selection import RFE, mutual_info_classif
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score, precision_score,
                              recall_score, roc_auc_score, roc_curve)
-from sklearn.model_selection import StratifiedKFold, cross_validate, train_test_split
+from sklearn.model_selection import (GridSearchCV, RandomizedSearchCV, StratifiedKFold,
+                                     cross_validate, train_test_split)
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
@@ -387,3 +388,33 @@ for ax, group in zip(axes, ["Individual (Normal)", "Individual + SMOTE"]):
 axes[0].set_ylabel("True positive rate (recall)")
 fig.suptitle("ROC curves on the test set")
 save("11_roc_curves.png")
+
+# 4.3 Hyperparameter tuning, scored on ROC-AUC because accuracy rewards ignoring CHD patients
+searches = {
+    "Logistic Regression": ("grid", {"model__C": [0.001, 0.01, 0.1, 1, 10, 100]}),
+    "SVM": ("grid", {"model__C": [0.1, 1, 10], "model__gamma": ["scale", 0.001, 0.01]}),
+    "Random Forest": ("grid", {"model__n_estimators": [300], "model__max_depth": [5, 10, None],
+                               "model__min_samples_leaf": [1, 5, 20], "model__max_features": ["sqrt", 0.3]}),
+    "XGBoost": ("random", {"model__n_estimators": [50, 100, 200, 300, 500], "model__max_depth": [1, 2, 3, 4, 5],
+                           "model__learning_rate": [0.005, 0.01, 0.02, 0.05, 0.1, 0.2],
+                           "model__subsample": [0.6, 0.8, 1.0], "model__colsample_bytree": [0.5, 0.7, 1.0],
+                           "model__min_child_weight": [1, 5, 10, 15]}),
+}
+tuned = {False: {}, True: {}}
+print("\nTuning (default vs tuned, cross-validated ROC-AUC):")
+for use_smote in [False, True]:
+    group = "Hypertuned + SMOTE" if use_smote else "Hypertuned"
+    for name, (kind, params) in searches.items():
+        pipe = build_pipe(base_models()[name], smote=use_smote)
+        if kind == "grid":
+            search = GridSearchCV(pipe, params, scoring="roc_auc", cv=cv_tune, n_jobs=-1)
+        else:
+            search = RandomizedSearchCV(pipe, params, n_iter=30, scoring="roc_auc", cv=cv_tune, n_jobs=-1, random_state=SEED)
+        search.fit(X_train, y_train)
+        tuned[use_smote][name] = search.best_estimator_.named_steps["model"]
+        print(f"  {name} ({'SMOTE' if use_smote else 'no SMOTE'}): best params = "
+              f"{ {k.replace('model__', ''): v for k, v in search.best_params_.items()} }", flush=True)
+        evaluate(group, name, clone(search.best_estimator_))
+        default = next(r for r in rows if r["Model"] == name and r["Group"] == ("Individual + SMOTE" if use_smote else "Individual (Normal)"))
+        print(f"    default vs tuned: CV ROC-AUC {default['CV ROC-AUC']:.3f} -> {rows[-1]['CV ROC-AUC']:.3f} | "
+              f"test accuracy {default['Accuracy']:.3f} -> {rows[-1]['Accuracy']:.3f} | test recall {default['Recall']:.3f} -> {rows[-1]['Recall']:.3f}")
