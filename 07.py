@@ -8,6 +8,7 @@ import pandas as pd
 import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.patches import Patch
+from scipy.stats import binomtest
 
 from imblearn.over_sampling import SMOTE
 from imblearn.pipeline import Pipeline as ImbPipeline
@@ -20,7 +21,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score, precision_score,
                              recall_score, roc_auc_score, roc_curve)
 from sklearn.model_selection import (GridSearchCV, RandomizedSearchCV, StratifiedKFold,
-                                     cross_validate, train_test_split)
+                                     cross_val_predict, cross_validate, train_test_split)
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
@@ -54,6 +55,7 @@ def save(name):
 
 def header(text):
     print("\n" + "=" * 90 + "\n" + text + "\n" + "=" * 90)
+
 
 # ------------------------------------------------------------------------------------------
 header("Q1. PRACTICAL IMPLEMENTATION & PREPROCESSING")
@@ -486,3 +488,84 @@ axes[1].set_ylim(0.5, 1)
 axes[1].set_title(f"{best_ind['Model']}: score vs components kept")
 axes[1].legend()
 save("12_pca_tradeoff.png")
+
+
+# ------------------------------------------------------------------------------------------
+header("Q7. FINAL COMPARATIVE ANALYSIS & CONCLUSION")
+# ------------------------------------------------------------------------------------------
+
+# Selection uses cross-validation only, then the test set just reports the result
+candidates = [r for r in rows if r["Group"] != "Baseline" and hasattr(fitted[(r["Group"], r["Model"])], "predict_proba")
+              and "SMOTE" not in r["Group"]]
+top = max(candidates, key=lambda r: r["CV ROC-AUC"])
+cutoff = top["CV ROC-AUC"] - cv_se[(top["Group"], top["Model"])]
+best = next(r for r in candidates if r["CV ROC-AUC"] >= cutoff)  # rows run from simplest to most complex
+best_pipe = fitted[(best["Group"], best["Model"])]
+print(f"Highest CV ROC-AUC: {top['Model']} ({top['Group']}) = {top['CV ROC-AUC']:.3f}, standard error = {cv_se[(top['Group'], top['Model'])]:.3f}")
+print(f"Selected, simplest model within one standard error: {best['Model']} ({best['Group']}), CV ROC-AUC = {best['CV ROC-AUC']:.3f}")
+
+# Decision threshold, chosen from out-of-fold training predictions
+oof = cross_val_predict(clone(best_pipe), X_train, y_train, cv=cv_eval, method="predict_proba", n_jobs=-1)[:, 1]
+sweep = pd.DataFrame({"threshold": np.arange(0.05, 0.60, 0.005)})
+sweep["accuracy"] = [accuracy_score(y_train, oof >= t) for t in sweep["threshold"]]
+sweep["recall"] = [recall_score(y_train, oof >= t) for t in sweep["threshold"]]
+t_accuracy = sweep[sweep["accuracy"] >= 0.81].sort_values("recall").iloc[-1]  # 1 point of margin above 80%
+t_recall = sweep[sweep["recall"] >= 0.65].sort_values("threshold").iloc[-1]
+
+test_prob = best_pipe.predict_proba(X_test)[:, 1]
+for label, point in [("accuracy >= 80% target", t_accuracy), ("screening, recall >= 65% target", t_recall)]:
+    t = point["threshold"]
+    add_row("Threshold-tuned", f"{best['Model']} t={t:.3f} ({label})", (test_prob >= t).astype(int), test_prob,
+            point["accuracy"], best["CV ROC-AUC"])
+    row = rows[-1]
+    print(f"  t={t:.3f} [{label}]: train-CV acc={point['accuracy']:.3f}, recall={point['recall']:.3f} | "
+          f"TEST acc={row['Accuracy']:.3f}, prec={row['Precision']:.3f}, recall={row['Recall']:.3f}, f1={row['F1']:.3f}")
+
+fig, ax = plt.subplots(figsize=(8, 4.8))
+ax.plot(sweep["threshold"], sweep["accuracy"], color=BLUE, linewidth=2, label="Accuracy")
+ax.plot(sweep["threshold"], sweep["recall"], color=ORANGE, linewidth=2, label="Recall (CHD caught)")
+ax.axhline(0.80, color=MUTED, linestyle="--", linewidth=1)
+ax.text(0.595, 0.815, "80% accuracy target", ha="right", color=INK2, fontsize=9)
+ax.axvline(t_accuracy["threshold"], color=MUTED, linestyle=":", linewidth=1)
+ax.text(t_accuracy["threshold"] + 0.005, 0.45, f"chosen t = {t_accuracy['threshold']:.3f}", color=INK2, fontsize=9)
+ax.set_xlabel("Decision threshold")
+ax.set_ylabel("Score (out-of-fold, training data)")
+ax.set_title(f"{best['Model']}: lowering the threshold trades accuracy for recall")
+ax.legend(loc="center right")
+save("13_threshold_tradeoff.png")
+
+results = pd.DataFrame(rows)
+results.to_csv(os.path.join(OUT, "model_comparison.csv"), index=False)
+print("\nComparative evaluation table (test set, plus cross-validated training scores):")
+print(results.round(3).to_string(index=False))
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 10), sharey=True)
+labels = results["Group"] + " | " + results["Model"].str.replace(r" \(.*target\)", "", regex=True)
+positions = np.arange(len(results))[::-1]
+axes[0].barh(positions, results["Accuracy"] * 100, color=BLUE, height=0.72)
+axes[0].axvline(baseline_acc * 100, color=INK2, linestyle="--", linewidth=1, label=f"Always 'No CHD' ({baseline_acc:.1%})")
+axes[0].axvline(80, color=MUTED, linestyle=":", linewidth=1, label="80% target")
+axes[0].set_yticks(positions, labels, fontsize=8)
+axes[0].set_xlim(50, 90)
+axes[0].set_xlabel("Test accuracy (%)")
+axes[0].set_title("Accuracy: nothing clearly beats the baseline")
+axes[0].legend(loc="upper center", bbox_to_anchor=(0.5, -0.06), ncol=2, fontsize=9)
+axes[1].barh(positions, results["Recall"] * 100, color=ORANGE, height=0.72)
+axes[1].set_xlabel("Test recall, share of CHD patients caught (%)")
+axes[1].set_title("Recall: this is where the models really differ")
+for ax in axes:
+    ax.grid(axis="y", visible=False)
+save("14_model_comparison.png")
+
+above = results[(results["Accuracy"] > 0.80) & (results["Group"] != "Baseline")]
+print(f"\n{len(above)} of {len(results) - 1} models exceed 80% test accuracy. Baseline accuracy = {baseline_acc:.1%}, "
+      f"test baseline = {rows[0]['Accuracy']:.1%}.")
+
+# Does the selected model at the default threshold really beat always predicting No CHD?
+pred = best_pipe.predict(X_test)
+model_only = int(((pred == y_test) & (y_test == 1)).sum())
+baseline_only = int(((pred != y_test) & (y_test == 0)).sum())
+p_value = binomtest(model_only, model_only + baseline_only, 0.5).pvalue if model_only + baseline_only else 1.0
+print(f"McNemar vs baseline for {best['Model']}: right only by model = {model_only}, "
+      f"right only by baseline = {baseline_only}, p = {p_value:.3f}")
+print(f"\nOutputs saved in: {OUT}")
