@@ -83,3 +83,20 @@ scaler = StandardScaler().fit(X_train_imp)
 X_train_scaled = pd.DataFrame(scaler.transform(X_train_imp), columns=X.columns, index=X_train.index)
 print("Scaled training data: mean = {:.3f}, std = {:.3f}".format(
     X_train_scaled.values.mean(), X_train_scaled.values.std()))
+
+
+# ------------------------------------------------------------------------------------------
+header("Q2. EXPLORATORY DATA ANALYSIS")
+# ------------------------------------------------------------------------------------------
+
+# 2.1 Descriptive statistics and target distribution
+print(df.describe().T.round(2))
+counts = df[TARGET].value_counts()
+baseline_acc = counts.max() / counts.sum()
+print(f"\nTarget: No CHD = {counts[0]} ({counts[0] / len(df):.1%}), CHD = {counts[1]} ({counts[1] / len(df):.1%})")
+print(f"Always predicting 'No CHD' already scores {baseline_acc:.1%} accuracy.")
+
+eda = df.assign(CHD=df[TARGET].map({0: "No CHD", 1: "CHD"}))
+CONTINUOUS = ["age", "cigsPerDay", "totChol", "sysBP", "diaBP", "BMI", "heartRate", "glucose"]
+CATEGORICAL = ["male", "education", "currentSmoker", "BPMeds", "prevalentStroke", "prevalentHyp", "diabetes"]
+eda[CATEGORICAL] = eda[CATEGORICAL].astype("Int64")
