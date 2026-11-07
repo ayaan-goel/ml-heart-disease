@@ -10,11 +10,19 @@ from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.patches import Patch
 
 from imblearn.over_sampling import SMOTE
+from imblearn.pipeline import Pipeline as ImbPipeline
 from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.decomposition import PCA
+from sklearn.dummy import DummyClassifier
+from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 from sklearn.feature_selection import RFE, mutual_info_classif
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
+from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score, precision_score,
+                             recall_score, roc_auc_score, roc_curve)
+from sklearn.model_selection import StratifiedKFold, cross_validate, train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+from xgboost import XGBClassifier
 
 SEED = 42
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -274,3 +282,108 @@ ax.grid(axis="x", visible=False)
 ax.margins(y=0.12)
 ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.1), ncol=2)
 save("09_smote_before_after.png")
+
+
+# ------------------------------------------------------------------------------------------
+header("Q4. MODEL EVALUATION & HYPERPARAMETER TUNING")
+# ------------------------------------------------------------------------------------------
+
+cv_tune = StratifiedKFold(5, shuffle=True, random_state=SEED)
+cv_eval = StratifiedKFold(5, shuffle=True, random_state=7)
+
+
+def build_pipe(model, smote=False, pca=None):
+    return ImbPipeline([
+        ("impute", CHDImputer()),
+        ("scale", StandardScaler()),
+        ("pca", PCA(n_components=pca, random_state=SEED) if pca else "passthrough"),
+        ("smote", SMOTE(random_state=SEED) if smote else "passthrough"),
+        ("model", model),
+    ])
+
+
+def risk_score(model, data):
+    last = model.steps[-1][1]
+    if isinstance(last, VotingClassifier):  # hard voting has no probabilities, so use the vote share
+        return last.transform(model[:-1].transform(data)).mean(axis=1)
+    if hasattr(model, "predict_proba"):
+        return model.predict_proba(data)[:, 1]
+    return model.decision_function(data)
+
+
+def auc_scorer(model, data, target):
+    return roc_auc_score(target, risk_score(model, data))
+
+
+rows, fitted, cv_se = [], {}, {}
+
+
+def add_row(group, name, pred, score, cv_acc, cv_auc):
+    rows.append({
+        "Group": group, "Model": name,
+        "Accuracy": accuracy_score(y_test, pred),
+        "Precision": precision_score(y_test, pred, zero_division=0),
+        "Recall": recall_score(y_test, pred),
+        "F1": f1_score(y_test, pred),
+        "ROC-AUC": roc_auc_score(y_test, score),
+        "CV Accuracy": cv_acc, "CV ROC-AUC": cv_auc,
+    })
+
+
+def evaluate(group, name, pipe):
+    cv = cross_validate(pipe, X_train, y_train, cv=cv_eval, n_jobs=-1,
+                        scoring={"acc": "accuracy", "auc": auc_scorer})
+    pipe.fit(X_train, y_train)
+    add_row(group, name, pipe.predict(X_test), risk_score(pipe, X_test),
+            cv["test_acc"].mean(), cv["test_auc"].mean())
+    fitted[(group, name)] = pipe
+    cv_se[(group, name)] = cv["test_auc"].std() / np.sqrt(cv_eval.get_n_splits())
+    row = rows[-1]
+    print(f"{group:22s} {name:34s} acc={row['Accuracy']:.3f} prec={row['Precision']:.3f} "
+          f"rec={row['Recall']:.3f} f1={row['F1']:.3f} auc={row['ROC-AUC']:.3f}", flush=True)
+    return pipe
+
+
+def base_models():
+    return {
+        "Logistic Regression": LogisticRegression(max_iter=2000),
+        "SVM": SVC(),
+        "Random Forest": RandomForestClassifier(random_state=SEED),
+        "XGBoost": XGBClassifier(eval_metric="logloss", n_jobs=1, random_state=SEED),
+    }
+
+
+# 4.1 / 4.2 Models with and without SMOTE
+evaluate("Baseline", "Always predict No CHD", build_pipe(DummyClassifier(strategy="most_frequent")))
+for name, model in base_models().items():
+    evaluate("Individual (Normal)", name, build_pipe(model))
+for name, model in base_models().items():
+    evaluate("Individual + SMOTE", name, build_pipe(model, smote=True))
+
+fig, axes = plt.subplots(2, 4, figsize=(14, 6.5))
+for r, group in enumerate(["Individual (Normal)", "Individual + SMOTE"]):
+    for c, name in enumerate(base_models()):
+        cm = confusion_matrix(y_test, fitted[(group, name)].predict(X_test))
+        print(f"\nConfusion matrix - {group} - {name}:\n{cm}")
+        sns.heatmap(cm, annot=True, fmt="d", cbar=False, square=True, linewidths=2, linecolor=SURFACE,
+                    cmap=LinearSegmentedColormap.from_list("blues", ["#e8f1fb", BLUE]),
+                    xticklabels=["No CHD", "CHD"], yticklabels=["No CHD", "CHD"], ax=axes[r, c])
+        axes[r, c].set_title(f"{name}\n{group}", fontsize=10)
+        axes[r, c].set_xlabel("Predicted")
+        axes[r, c].set_ylabel("Actual")
+fig.suptitle("Confusion matrices on the test set: SMOTE trades accuracy for catching more CHD")
+save("10_confusion_matrices.png")
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 5.2), sharey=True)
+for ax, group in zip(axes, ["Individual (Normal)", "Individual + SMOTE"]):
+    for (name, _), color in zip(base_models().items(), [BLUE, ORANGE, AQUA, YELLOW]):
+        score = risk_score(fitted[(group, name)], X_test)
+        fpr, tpr, _ = roc_curve(y_test, score)
+        ax.plot(fpr, tpr, color=color, linewidth=2, label=f"{name} (AUC {roc_auc_score(y_test, score):.3f})")
+    ax.plot([0, 1], [0, 1], color=MUTED, linestyle="--", linewidth=1, label="Random guess (AUC 0.500)")
+    ax.set_title(group)
+    ax.set_xlabel("False positive rate")
+    ax.legend(loc="lower right", fontsize=9)
+axes[0].set_ylabel("True positive rate (recall)")
+fig.suptitle("ROC curves on the test set")
+save("11_roc_curves.png")
