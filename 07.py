@@ -14,7 +14,7 @@ from imblearn.pipeline import Pipeline as ImbPipeline
 from sklearn.base import BaseEstimator, TransformerMixin, clone
 from sklearn.decomposition import PCA
 from sklearn.dummy import DummyClassifier
-from sklearn.ensemble import RandomForestClassifier, VotingClassifier
+from sklearn.ensemble import RandomForestClassifier, StackingClassifier, VotingClassifier
 from sklearn.feature_selection import RFE, mutual_info_classif
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score, precision_score,
@@ -418,3 +418,31 @@ for use_smote in [False, True]:
         default = next(r for r in rows if r["Model"] == name and r["Group"] == ("Individual + SMOTE" if use_smote else "Individual (Normal)"))
         print(f"    default vs tuned: CV ROC-AUC {default['CV ROC-AUC']:.3f} -> {rows[-1]['CV ROC-AUC']:.3f} | "
               f"test accuracy {default['Accuracy']:.3f} -> {rows[-1]['Accuracy']:.3f} | test recall {default['Recall']:.3f} -> {rows[-1]['Recall']:.3f}")
+
+
+# ------------------------------------------------------------------------------------------
+header("Q5. ENSEMBLE LEARNING")
+# ------------------------------------------------------------------------------------------
+
+
+def members(use_smote):
+    out = []
+    for key, name in [("svm", "SVM"), ("xgb", "XGBoost"), ("rf", "Random Forest")]:
+        model = clone(tuned[use_smote][name])
+        # SMOTE sits inside each member so the stacker's meta-model is trained on real patients only
+        out.append((key, ImbPipeline([("smote", SMOTE(random_state=SEED)), ("model", model)]) if use_smote else model))
+    return out
+
+
+for use_smote in [False, True]:
+    group = "Ensemble + SMOTE" if use_smote else "Ensemble"
+    evaluate(group, "Hard Voting (SVM, XGB, RF)", build_pipe(VotingClassifier(members(use_smote), voting="hard")))
+    evaluate(group, "Stacking (SVM, XGB, RF -> LR)", build_pipe(
+        StackingClassifier(members(use_smote), final_estimator=LogisticRegression(max_iter=2000), cv=5)))
+
+print("\nStacking generalisation:")
+for group in ["Ensemble", "Ensemble + SMOTE"]:
+    model = fitted[(group, "Stacking (SVM, XGB, RF -> LR)")]
+    row = next(r for r in rows if r["Group"] == group and r["Model"].startswith("Stacking"))
+    print(f"  {group:18s} train acc={accuracy_score(y_train, model.predict(X_train)):.3f} | "
+          f"CV acc={row['CV Accuracy']:.3f} | test acc={row['Accuracy']:.3f}")
