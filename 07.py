@@ -446,3 +446,43 @@ for group in ["Ensemble", "Ensemble + SMOTE"]:
     row = next(r for r in rows if r["Group"] == group and r["Model"].startswith("Stacking"))
     print(f"  {group:18s} train acc={accuracy_score(y_train, model.predict(X_train)):.3f} | "
           f"CV acc={row['CV Accuracy']:.3f} | test acc={row['Accuracy']:.3f}")
+
+
+# ------------------------------------------------------------------------------------------
+header("Q6. PRINCIPAL COMPONENT ANALYSIS")
+# ------------------------------------------------------------------------------------------
+
+# 6.1 PCA on standardised features
+pca_full = PCA(random_state=SEED).fit(X_train_scaled)
+cum_var = np.cumsum(pca_full.explained_variance_ratio_)
+print("Cumulative variance by component:", np.round(cum_var, 3))
+
+# 6.2 Best individual algorithm, chosen by cross-validation and not by the test set
+individual = [r for r in rows if r["Group"].startswith("Individual")]
+best_ind = max(individual, key=lambda r: r["CV ROC-AUC"])
+best_smote = best_ind["Group"].endswith("SMOTE")
+print(f"\nBest individual by CV ROC-AUC: {best_ind['Model']} ({best_ind['Group']}), CV ROC-AUC = {best_ind['CV ROC-AUC']:.3f}")
+
+pca_results = []
+for variance in [0.70, 0.80, 0.90, 0.95, 0.99]:
+    pipe = build_pipe(base_models()[best_ind["Model"]], smote=best_smote, pca=variance)
+    evaluate("PCA", f"{best_ind['Model']} PCA {variance:.0%} variance", pipe)
+    pca_results.append({"variance": variance, "components": pipe.named_steps["pca"].n_components_,
+                        "accuracy": rows[-1]["Accuracy"], "recall": rows[-1]["Recall"], "auc": rows[-1]["ROC-AUC"]})
+pca_table = pd.DataFrame(pca_results)
+print("\nVariance retained vs performance:\n", pca_table.round(3).to_string(index=False), sep="")
+print(f"Without PCA: {X.shape[1]} features, accuracy={best_ind['Accuracy']:.3f}, recall={best_ind['Recall']:.3f}, auc={best_ind['ROC-AUC']:.3f}")
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 4.5))
+axes[0].plot(range(1, len(cum_var) + 1), cum_var * 100, color=BLUE, linewidth=2, marker="o", markersize=5)
+axes[0].set_xlabel("Number of components")
+axes[0].set_ylabel("Cumulative variance explained (%)")
+axes[0].set_title("Variance is spread widely: 95% needs most components")
+axes[1].plot(pca_table["components"], pca_table["accuracy"], color=BLUE, linewidth=2, marker="o", markersize=6, label="Accuracy")
+axes[1].plot(pca_table["components"], pca_table["auc"], color=ORANGE, linewidth=2, marker="s", markersize=6, label="ROC-AUC")
+axes[1].set_xlabel("Components kept")
+axes[1].set_ylabel("Test score")
+axes[1].set_ylim(0.5, 1)
+axes[1].set_title(f"{best_ind['Model']}: score vs components kept")
+axes[1].legend()
+save("12_pca_tradeoff.png")
