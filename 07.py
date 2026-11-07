@@ -3,12 +3,16 @@ import os
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.patches import Patch
 
+from imblearn.over_sampling import SMOTE
 from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.feature_selection import RFE, mutual_info_classif
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
@@ -226,3 +230,47 @@ print(f"3. Glucose: {rates['glucose']['mean'].iloc[-1]:.1%} CHD above 126 mg/dL 
 print(f"4. Smoking: smokers {smoke[1]:.1%} vs non-smokers {smoke[0]:.1%} is a small gap, but over 20 cigarettes/day reaches "
       f"{rates['cigsPerDay']['mean'].iloc[-1]:.1%}. Record the amount smoked, not just yes/no.")
 print(f"5. Cholesterol: {rates['totChol']['mean'].iloc[-1]:.1%} CHD above 240 mg/dL vs {rates['totChol']['mean'].iloc[0]:.1%} at or below 200.")
+
+
+# ------------------------------------------------------------------------------------------
+header("Q3. FEATURE SELECTION & CLASS BALANCING")
+# ------------------------------------------------------------------------------------------
+
+# 3.1 Mutual Information and RFE (training data only)
+discrete = [c in CATEGORICAL for c in X.columns]
+mi = pd.Series(mutual_info_classif(X_train_imp, y_train, discrete_features=discrete, random_state=SEED),
+               index=X.columns).sort_values(ascending=False)
+rfe = RFE(LogisticRegression(max_iter=2000), n_features_to_select=8).fit(X_train_scaled, y_train)
+rfe_selected = list(X.columns[rfe.support_])
+print("Mutual Information:\n", mi.round(4), sep="")
+print("\nRFE top 8 (Logistic Regression):", rfe_selected)
+print("Top 8 by MI and also chosen by RFE:", [f for f in mi.index[:8] if f in rfe_selected])
+
+fig, ax = plt.subplots(figsize=(8, 5.5))
+ordered = mi.sort_values()
+ax.barh(ordered.index, ordered.values, height=0.7,
+        color=[BLUE if f in rfe_selected else AXIS for f in ordered.index])
+ax.set_xlabel("Mutual information with TenYearCHD")
+ax.set_title("Top predictors: age and blood pressure lead on both methods")
+ax.grid(axis="y", visible=False)
+ax.legend(handles=[Patch(color=BLUE, label="Selected by RFE"), Patch(color=AXIS, label="Not selected by RFE")], loc="lower right")
+save("08_feature_selection.png")
+
+# 3.2 SMOTE on the training set only
+X_smote, y_smote = SMOTE(random_state=SEED).fit_resample(X_train_scaled, y_train)
+before, after = y_train.value_counts().sort_index(), pd.Series(y_smote).value_counts().sort_index()
+print("\nClass counts before SMOTE:", before.to_dict(), "| after SMOTE:", after.to_dict())
+print("The test set is never resampled, so it still reflects the real 15% CHD rate.")
+
+fig, ax = plt.subplots(figsize=(6, 4))
+positions = np.arange(2)
+for offset, cls, label, color in [(-0.19, 0, "No CHD", BLUE), (0.19, 1, "CHD", ORANGE)]:
+    bars = ax.bar(positions + offset, [before[cls], after[cls]], width=0.36, color=color, label=label)
+    ax.bar_label(bars, padding=3)
+ax.set_xticks(positions, ["Before SMOTE", "After SMOTE"])
+ax.set_ylabel("Training patients")
+ax.set_title("SMOTE balances the training set")
+ax.grid(axis="x", visible=False)
+ax.margins(y=0.12)
+ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.1), ncol=2)
+save("09_smote_before_after.png")
