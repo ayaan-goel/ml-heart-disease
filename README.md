@@ -42,6 +42,10 @@ Imputation, scaling and SMOTE are fitted inside pipelines on training data only,
 - The models differ in how many CHD patients they catch, so the decision threshold is chosen from cross-validated training predictions.
 - Logistic Regression was selected as the simplest model within one standard error of the best cross-validated ROC-AUC (0.73).
 
+![Accuracy and recall for every model](07_outputs/14_model_comparison.png)
+
+![Accuracy and recall at each decision threshold](07_outputs/13_threshold_tradeoff.png)
+
 ## Key insights
 
 - CHD risk rises from 5% at ages 31-40 to 28% at ages 61-70.
