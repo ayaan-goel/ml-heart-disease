@@ -75,3 +75,11 @@ Imputation, scaling and SMOTE are fitted inside pipelines on training data only,
 ## A note on 90%+ accuracy claims
 
 Several published results on this dataset report 90-96% accuracy. Those numbers appear when the data is oversampled before the train/test split, so synthetic copies of patients end up in the test set. Reproducing that mistake here gives 95% accuracy with a Random Forest; done correctly, the same model scores about 84%.
+
+## Limitations
+
+- **Accuracy does not beat the baseline.** No model is reliably more accurate than always predicting "no CHD", so recall and ROC-AUC (about 0.73) are the more meaningful measures.
+- **Many cases are still missed.** At the 80% accuracy threshold the model catches only about a quarter of CHD patients; catching more means flagging many healthy patients too.
+- **One small test set.** The 848 test patients give accuracy a margin of roughly ±2.5 percentage points, so small differences between models are noise.
+- **Limited population.** The data comes from a single town in Massachusetts, so results may not carry over to other populations.
+- **Limited predictors.** The dataset has no HDL or LDL cholesterol, family history or physical activity, which clinical risk scores rely on.
