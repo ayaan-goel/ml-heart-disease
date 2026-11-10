@@ -6,6 +6,25 @@ An end-to-end machine learning pipeline on the Framingham Heart Study dataset th
 
 `framingham.csv` is the Kaggle subset of the Framingham Heart Study: 4,240 patients, 15 risk factors and the target `TenYearCHD`. Only 15.2% of patients developed CHD, so a model that always predicts "no CHD" already scores 84.8% accuracy.
 
+| Column | Meaning | Missing |
+|---|---|---|
+| `male` | 1 = male, 0 = female | 0 |
+| `age` | Age in years (32-70) | 0 |
+| `education` | 1 = some high school, 2 = high school, 3 = some college, 4 = college degree | 105 |
+| `currentSmoker` | 1 = smokes | 0 |
+| `cigsPerDay` | Cigarettes smoked per day | 29 |
+| `BPMeds` | 1 = on blood pressure medication | 53 |
+| `prevalentStroke` | 1 = previous stroke | 0 |
+| `prevalentHyp` | 1 = hypertensive | 0 |
+| `diabetes` | 1 = diabetic | 0 |
+| `totChol` | Total cholesterol (mg/dL) | 50 |
+| `sysBP` | Systolic blood pressure (mmHg) | 0 |
+| `diaBP` | Diastolic blood pressure (mmHg) | 0 |
+| `BMI` | Body mass index (kg/m²) | 19 |
+| `heartRate` | Resting heart rate (beats per minute) | 1 |
+| `glucose` | Glucose level (mg/dL) | 388 |
+| `TenYearCHD` | Target: 1 = developed CHD within 10 years | 0 |
+
 ## How to run
 
 ```bash
