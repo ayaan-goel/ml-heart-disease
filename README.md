@@ -34,6 +34,18 @@ python 07.py
 
 The script takes about 5 minutes and writes all charts plus `model_comparison.csv` to `07_outputs/`.
 
+## Project structure
+
+```
+.
+├── 07.py                  # Full pipeline, sections Q1-Q7
+├── framingham.csv         # Dataset
+├── requirements.txt       # Pinned dependencies
+└── 07_outputs/
+    ├── 01-14_*.png        # EDA, model evaluation and comparison charts
+    └── model_comparison.csv
+```
+
 ## Pipeline
 
 | Section | What it does |
