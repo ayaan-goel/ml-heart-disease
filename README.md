@@ -27,6 +27,8 @@ An end-to-end machine learning pipeline on the Framingham Heart Study dataset th
 
 ## How to run
 
+Tested with Python 3.13 on Windows.
+
 ```bash
 pip install -r requirements.txt
 python 07.py
