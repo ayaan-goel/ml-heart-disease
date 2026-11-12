@@ -1,3 +1,9 @@
+"""10-year coronary heart disease (CHD) prediction on the Framingham dataset.
+
+Runs the full assignment pipeline (Q1-Q7): preprocessing, EDA, feature selection,
+SMOTE, model training and tuning, ensembles, PCA and the final model comparison.
+Charts and the comparison table are written to 07_outputs/.
+"""
 import os
 
 import matplotlib
