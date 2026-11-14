@@ -103,3 +103,8 @@ Several published results on this dataset report 90-96% accuracy. Those numbers 
 - [Framingham Heart Study](https://www.framinghamheartstudy.org/)
 - [MIT 15.071 The Analytics Edge](https://ocw.mit.edu/courses/15-071-the-analytics-edge-spring-2017/), which uses the same dataset to predict 10-year CHD with logistic regression
 - Chawla et al., [SMOTE: Synthetic Minority Over-sampling Technique](https://doi.org/10.1613/jair.953), Journal of Artificial Intelligence Research, 2002
+
+## Authors
+
+- Ayaan Goel
+- Kshiti Bhavsar
