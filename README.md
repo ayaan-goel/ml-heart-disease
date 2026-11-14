@@ -97,3 +97,9 @@ Several published results on this dataset report 90-96% accuracy. Those numbers 
 - **One small test set.** The 848 test patients give accuracy a margin of roughly ±2.5 percentage points, so small differences between models are noise.
 - **Limited population.** The data comes from a single town in Massachusetts, so results may not carry over to other populations.
 - **Limited predictors.** The dataset has no HDL or LDL cholesterol, family history or physical activity, which clinical risk scores rely on.
+
+## References
+
+- [Framingham Heart Study](https://www.framinghamheartstudy.org/)
+- [MIT 15.071 The Analytics Edge](https://ocw.mit.edu/courses/15-071-the-analytics-edge-spring-2017/), which uses the same dataset to predict 10-year CHD with logistic regression
+- Chawla et al., [SMOTE: Synthetic Minority Over-sampling Technique](https://doi.org/10.1613/jair.953), Journal of Artificial Intelligence Research, 2002
