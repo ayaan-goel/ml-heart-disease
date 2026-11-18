@@ -64,12 +64,12 @@ Imputation, scaling and SMOTE are fitted inside pipelines on training data only,
 
 ## Results
 
-| Model | Test accuracy | Recall (CHD caught) |
-|---|---|---|
-| Always predict "no CHD" | 84.8% | 0% |
-| Logistic Regression, threshold 0.5 | 84.4% | 5.4% |
-| Logistic Regression, threshold 0.285 | 80.2% | 27.1% |
-| Logistic Regression, threshold 0.16 (screening) | 69.0% | 60.5% |
+| Model | Test accuracy | Precision | Recall (CHD caught) | F1 |
+|---|---|---|---|---|
+| Always predict "no CHD" | 84.8% | 0% | 0% | 0.00 |
+| Logistic Regression, threshold 0.5 | 84.4% | 41.2% | 5.4% | 0.10 |
+| Logistic Regression, threshold 0.285 | 80.2% | 32.1% | 27.1% | 0.29 |
+| Logistic Regression, threshold 0.16 (screening) | 69.0% | 26.9% | 60.5% | 0.37 |
 
 - Accuracy plateaus at about 85% for every model, tuning and preprocessing choice, which is no better than the baseline.
 - The models differ in how many CHD patients they catch, so the decision threshold is chosen from cross-validated training predictions.
