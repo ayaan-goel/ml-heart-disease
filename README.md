@@ -62,6 +62,8 @@ The script takes about 5 minutes and writes all charts plus `model_comparison.cs
 
 Imputation, scaling and SMOTE are fitted inside pipelines on training data only, so no information leaks from the test set.
 
+All 29 patients with a missing `cigsPerDay` are smokers, so they are given the smokers' median (20) instead of the overall median, which is 0 because half the patients don't smoke.
+
 ## Results
 
 | Model | Test accuracy | Precision | Recall (CHD caught) | F1 |
