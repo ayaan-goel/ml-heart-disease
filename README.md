@@ -85,6 +85,7 @@ Imputation, scaling and SMOTE are fitted inside pipelines on training data only,
 - Patients with systolic BP above 160 mmHg have a 32% CHD rate, against 9% at or below 120.
 - Fasting glucose above 126 mg/dL is linked to a 44% CHD rate.
 - Smoking status alone barely matters (15.9% vs 14.5%), but more than 20 cigarettes a day reaches 21%.
+- Total cholesterol above 240 mg/dL is linked to an 18% CHD rate, against 10% at or below 200.
 
 ## A note on 90%+ accuracy claims
 
