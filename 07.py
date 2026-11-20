@@ -243,7 +243,7 @@ print(f"1. Age: CHD rate rises from {rates['age']['mean'].iloc[0]:.1%} (31-40) t
 print(f"2. Blood pressure: {rates['sysBP']['mean'].iloc[-1]:.1%} CHD above 160 mmHg vs {rates['sysBP']['mean'].iloc[0]:.1%} at or below 120; "
       f"hypertensive patients {hyp[1]:.1%} vs {hyp[0]:.1%}. BP control is the strongest modifiable target here.")
 print(f"3. Glucose: {rates['glucose']['mean'].iloc[-1]:.1%} CHD above 126 mg/dL vs {rates['glucose']['mean'].iloc[0]:.1%} at or below 100 "
-      f"(only {rates['glucose']['size'].iloc[-1]} patients). Flag high fasting glucose for cardiac follow-up.")
+      f"(only {rates['glucose']['size'].iloc[-1]} patients). Flag high glucose for cardiac follow-up.")
 print(f"4. Smoking: smokers {smoke[1]:.1%} vs non-smokers {smoke[0]:.1%} is a small gap, but over 20 cigarettes/day reaches "
       f"{rates['cigsPerDay']['mean'].iloc[-1]:.1%}. Record the amount smoked, not just yes/no.")
 print(f"5. Cholesterol: {rates['totChol']['mean'].iloc[-1]:.1%} CHD above 240 mg/dL vs {rates['totChol']['mean'].iloc[0]:.1%} at or below 200.")
