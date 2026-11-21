@@ -89,6 +89,8 @@ All 29 patients with a missing `cigsPerDay` are smokers, so they are given the s
 - Smoking status alone barely matters (15.9% vs 14.5%), but more than 20 cigarettes a day reaches 21%.
 - Total cholesterol above 240 mg/dL is linked to an 18% CHD rate, against 10% at or below 200.
 
+![CHD rate by age, blood pressure, cholesterol, glucose and smoking](07_outputs/07_chd_rate_by_risk_factor.png)
+
 ## A note on 90%+ accuracy claims
 
 Several published results on this dataset report 90-96% accuracy. Those numbers appear when the data is oversampled before the train/test split, so synthetic copies of patients end up in the test set. Reproducing that mistake here gives 95% accuracy with a Random Forest; done correctly, the same model scores about 84%.
