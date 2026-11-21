@@ -81,6 +81,8 @@ All 29 patients with a missing `cigsPerDay` are smokers, so they are given the s
 
 ![Accuracy and recall at each decision threshold](07_outputs/13_threshold_tradeoff.png)
 
+![Confusion matrices with and without SMOTE](07_outputs/10_confusion_matrices.png)
+
 ## Key insights
 
 - CHD risk rises from 5% at ages 31-40 to 28% at ages 61-70.
