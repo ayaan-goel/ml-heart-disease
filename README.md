@@ -75,7 +75,7 @@ All 29 patients with a missing `cigsPerDay` are smokers, so they are given the s
 
 - Accuracy plateaus at about 85% for every model, tuning and preprocessing choice, which is no better than the baseline.
 - The models differ in how many CHD patients they catch, so the decision threshold is chosen from cross-validated training predictions.
-- Logistic Regression was selected as the simplest model within one standard error of the best cross-validated ROC-AUC (0.73).
+- Logistic Regression was selected as the simplest model within one standard error of the best cross-validated ROC-AUC (0.73). Its ROC-AUC on the test set is 0.70.
 
 ![Accuracy and recall for every model](07_outputs/14_model_comparison.png)
 
