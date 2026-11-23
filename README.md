@@ -57,7 +57,7 @@ The script takes about 5 minutes and writes all charts plus `model_comparison.cs
 | Q3 Feature selection | Mutual Information and RFE, SMOTE on the training set |
 | Q4 Models | Logistic Regression, SVM, Random Forest, XGBoost, with and without SMOTE, plus GridSearchCV / RandomizedSearchCV tuning |
 | Q5 Ensembles | Hard voting and stacking over SVM, XGBoost and Random Forest |
-| Q6 PCA | Best model retrained on 70-99% of the variance |
+| Q6 PCA | Best model retrained on 70-99% of the variance (7 to 15 of 15 components); accuracy stays at 84-85% throughout |
 | Q7 Comparison | Full comparison table, decision-threshold tuning and model selection |
 
 Imputation, scaling and SMOTE are fitted inside pipelines on training data only, so no information leaks from the test set.
