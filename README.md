@@ -86,7 +86,7 @@ All 29 patients with a missing `cigsPerDay` are smokers, so they are given the s
 ## Key insights
 
 - CHD risk rises from 5% at ages 31-40 to 28% at ages 61-70.
-- Patients with systolic BP above 160 mmHg have a 32% CHD rate, against 9% at or below 120.
+- Patients with systolic BP above 160 mmHg have a 32% CHD rate, against 9% at or below 120. Patients already diagnosed with hypertension have a 25% rate, against 11% for the rest.
 - Glucose above 126 mg/dL is linked to a 44% CHD rate, against 15% at or below 100, though only 82 patients are in that group.
 - Smoking status alone barely matters (15.9% vs 14.5%), but more than 20 cigarettes a day reaches 21%.
 - Total cholesterol above 240 mg/dL is linked to an 18% CHD rate, against 10% at or below 200.
