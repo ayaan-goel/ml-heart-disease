@@ -34,7 +34,9 @@ pip install -r requirements.txt
 python 07.py
 ```
 
-The script takes about 5 minutes and writes all charts plus `model_comparison.csv` to `07_outputs/`.
+The script takes about 5 minutes and writes all charts and CSV tables to `07_outputs/`.
+
+Every random step uses a fixed seed (`SEED = 42`), so rerunning the script reproduces the same split, models and results.
 
 ## Project structure
 
