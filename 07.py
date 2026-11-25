@@ -522,6 +522,7 @@ sweep["accuracy"] = [accuracy_score(y_train, oof >= t) for t in sweep["threshold
 sweep["recall"] = [recall_score(y_train, oof >= t) for t in sweep["threshold"]]
 t_accuracy = sweep[sweep["accuracy"] >= ACCURACY_TARGET].sort_values("recall").iloc[-1]
 t_recall = sweep[sweep["recall"] >= RECALL_TARGET].sort_values("threshold").iloc[-1]
+sweep.round(4).to_csv(os.path.join(OUT, "threshold_sweep.csv"), index=False)
 
 test_prob = best_pipe.predict_proba(X_test)[:, 1]
 for label, point in [("accuracy >= 80% target", t_accuracy), ("screening, recall >= 65% target", t_recall)]:
