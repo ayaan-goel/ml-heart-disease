@@ -480,6 +480,7 @@ for variance in [0.70, 0.80, 0.90, 0.95, 0.99]:
     pca_results.append({"variance": variance, "components": pipe.named_steps["pca"].n_components_,
                         "accuracy": rows[-1]["Accuracy"], "recall": rows[-1]["Recall"], "auc": rows[-1]["ROC-AUC"]})
 pca_table = pd.DataFrame(pca_results)
+pca_table.to_csv(os.path.join(OUT, "pca_tradeoff.csv"), index=False)
 print("\nVariance retained vs performance:\n", pca_table.round(3).to_string(index=False), sep="")
 print(f"Without PCA: {X.shape[1]} features, accuracy={best_ind['Accuracy']:.3f}, recall={best_ind['Recall']:.3f}, auc={best_ind['ROC-AUC']:.3f}")
 
