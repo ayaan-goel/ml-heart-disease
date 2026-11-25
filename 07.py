@@ -33,6 +33,8 @@ from sklearn.svm import SVC
 from xgboost import XGBClassifier
 
 SEED = 42
+ACCURACY_TARGET = 0.81  # threshold must keep out-of-fold accuracy here: 1 point of margin above the 80% goal
+RECALL_TARGET = 0.65    # screening threshold must catch at least this share of CHD patients
 BASE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(BASE, "07_outputs")
 os.makedirs(OUT, exist_ok=True)
@@ -515,8 +517,8 @@ oof = cross_val_predict(clone(best_pipe), X_train, y_train, cv=cv_eval, method="
 sweep = pd.DataFrame({"threshold": np.arange(0.05, 0.60, 0.005)})
 sweep["accuracy"] = [accuracy_score(y_train, oof >= t) for t in sweep["threshold"]]
 sweep["recall"] = [recall_score(y_train, oof >= t) for t in sweep["threshold"]]
-t_accuracy = sweep[sweep["accuracy"] >= 0.81].sort_values("recall").iloc[-1]  # 1 point of margin above 80%
-t_recall = sweep[sweep["recall"] >= 0.65].sort_values("threshold").iloc[-1]
+t_accuracy = sweep[sweep["accuracy"] >= ACCURACY_TARGET].sort_values("recall").iloc[-1]
+t_recall = sweep[sweep["recall"] >= RECALL_TARGET].sort_values("threshold").iloc[-1]
 
 test_prob = best_pipe.predict_proba(X_test)[:, 1]
 for label, point in [("accuracy >= 80% target", t_accuracy), ("screening, recall >= 65% target", t_recall)]:
