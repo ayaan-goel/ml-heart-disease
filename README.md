@@ -44,8 +44,11 @@ The script takes about 5 minutes and writes all charts plus `model_comparison.cs
 ├── framingham.csv         # Dataset
 ├── requirements.txt       # Pinned dependencies
 └── 07_outputs/
-    ├── 01-14_*.png        # EDA, model evaluation and comparison charts
-    └── model_comparison.csv
+    ├── 01-14_*.png             # EDA, model evaluation and comparison charts
+    ├── model_comparison.csv    # Every model's test and cross-validated scores
+    ├── feature_selection.csv   # Mutual information and RFE selection per feature
+    ├── pca_tradeoff.csv        # Components, accuracy, recall and ROC-AUC per variance level
+    └── threshold_sweep.csv     # Out-of-fold accuracy and recall at each decision threshold
 ```
 
 ## Pipeline
