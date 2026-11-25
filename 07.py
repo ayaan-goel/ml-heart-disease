@@ -264,6 +264,8 @@ rfe_selected = list(X.columns[rfe.support_])
 print("Mutual Information:\n", mi.round(4), sep="")
 print("\nRFE top 8 (Logistic Regression):", rfe_selected)
 print("Top 8 by MI and also chosen by RFE:", [f for f in mi.index[:8] if f in rfe_selected])
+pd.DataFrame({"mutual_information": mi, "rfe_selected": mi.index.isin(rfe_selected)}).to_csv(
+    os.path.join(OUT, "feature_selection.csv"), index_label="feature")
 
 fig, ax = plt.subplots(figsize=(8, 5.5))
 ordered = mi.sort_values()
