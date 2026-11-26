@@ -100,6 +100,8 @@ All 29 patients with a missing `cigsPerDay` are smokers, so they are given the s
 
 ![CHD rate by age, blood pressure, cholesterol, glucose and smoking](07_outputs/07_chd_rate_by_risk_factor.png)
 
+![Mutual information per feature, with RFE selections highlighted](07_outputs/08_feature_selection.png)
+
 ## A note on 90%+ accuracy claims
 
 Several published results on this dataset report 90-96% accuracy. Those numbers appear when the data is oversampled before the train/test split, so synthetic copies of patients end up in the test set. Reproducing that mistake here gives 95% accuracy with a Random Forest; done correctly, the same model scores about 84%.
