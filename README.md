@@ -81,6 +81,7 @@ All 29 patients with a missing `cigsPerDay` are smokers, so they are given the s
 - Accuracy plateaus at about 85% for every model, tuning and preprocessing choice, which is no better than the baseline.
 - The models differ in how many CHD patients they catch, so the decision threshold is chosen from cross-validated training predictions.
 - Logistic Regression was selected as the simplest model within one standard error of the best cross-validated ROC-AUC (0.73). Its ROC-AUC on the test set is 0.70.
+- Ensembles add nothing over a single Logistic Regression: stacking reaches a cross-validated ROC-AUC of 0.725-0.728, and hard voting with SMOTE catches 60.5% of CHD patients at 67.5% accuracy, about the same as Logistic Regression with SMOTE.
 
 ![Accuracy and recall for every model](07_outputs/14_model_comparison.png)
 
